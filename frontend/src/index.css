@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700;800&family=Rubik:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 141 100% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 141 100% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 141 100% 10%;
+    --primary: 141 72% 29%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 141 72% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 141 50% 95%;
+    --muted-foreground: 141 30% 45%;
+    --accent: 141 40% 90%;
+    --accent-foreground: 141 72% 29%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 141 30% 85%;
+    --input: 141 30% 85%;
+    --ring: 141 72% 29%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 141 100% 5%;
+    --foreground: 141 30% 95%;
+    --card: 141 80% 8%;
+    --card-foreground: 141 30% 95%;
+    --primary: 141 60% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 141 60% 35%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 141 60% 12%;
+    --muted-foreground: 141 20% 65%;
+    --accent: 141 60% 15%;
+    --accent-foreground: 141 60% 75%;
+    --border: 141 50% 18%;
+    --input: 141 50% 18%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  /* POS Terminal specific styles */
+  .pos-screen {
+    @apply h-screen flex flex-col overflow-hidden bg-gray-50;
+  }
+
+  .cart-item {
+    @apply flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-store-green/30;
+  }
+
+  .numpad-btn {
+    @apply h-14 text-xl font-semibold bg-white border border-gray-200 rounded-xl hover:bg-store-green/10 hover:border-store-green active:scale-95 transition-all cursor-pointer flex items-center justify-center;
+  }
+
+  .stat-card {
+    @apply bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow;
+  }
+
+  .product-card {
+    @apply bg-white rounded-xl border border-gray-100 p-4 hover:border-store-green/50 hover:shadow-md cursor-pointer transition-all active:scale-[0.98];
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:text-store-green hover:bg-store-green/10 transition-all cursor-pointer font-medium;
+  }
+
+  .sidebar-item.active {
+    @apply text-store-green bg-store-green/10 font-semibold;
+  }
+
+  /* Glassmorphism card */
+  .glass-card {
+    @apply backdrop-blur-sm bg-white/80 border border-white/50 shadow-lg;
+  }
+
+  /* Status badges */
+  .badge-completed { @apply bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-pending { @apply bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-voided { @apply bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-low { @apply bg-orange-100 text-orange-800 text-xs font-semibold px-2 py-0.5 rounded-full; }
+
+  /* Shimmer loading */
+  .shimmer {
+    @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #BBF7D0; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #15803D; }
+
+/* Receipt print styles */
+@media print {
+  body * { visibility: hidden; }
+  .receipt-printable, .receipt-printable * { visibility: visible; }
+  .receipt-printable { position: absolute; left: 0; top: 0; width: 80mm; }
+}

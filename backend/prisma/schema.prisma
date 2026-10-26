@@ -1,0 +1,466 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TaxClass {
+  id           String  @id @default(uuid())
+  name         String
+  rate_percent Float
+  is_active    Boolean @default(true)
+}
+
+model Branch {
+  id               String            @id @default(uuid())
+  code             String            @unique
+  name             String
+  address          String
+  phone            String
+  is_active        Boolean           @default(true)
+  created_at       DateTime          @default(now())
+  users            User[]
+  purchase_orders  PurchaseOrder[]
+  goods_receipts   GoodsReceipt[]
+  inventory_bals   InventoryBalance[]
+  inventory_moves  InventoryMovement[]
+  inventory_counts InventoryCount[]
+  sales            Sale[]
+  refunds          Refund[]
+  registers        Register[]
+  cashier_shifts   CashierShift[]
+  daily_closings   DailyClosing[]
+  sync_devices     SyncDevice[]
+
+  StockTransferFrom StockTransfer[] @relation("TransferFrom")
+  StockTransferTo   StockTransfer[] @relation("TransferTo")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  branch_id      String?
+  branch         Branch?         @relation(fields: [branch_id], references: [id])
+  full_name      String
+  username       String          @unique
+  password_hash  String
+  phone          String
+  email          String?
+  is_active      Boolean         @default(true)
+  last_login_at  DateTime?
+  created_at     DateTime        @default(now())
+  roles          UserRole[]
+  sales          Sale[]
+  cashier_shifts CashierShift[]
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String
+  permissions RolePermission[]
+  users       UserRole[]
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  description String
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+  role          Role       @relation(fields: [role_id], references: [id])
+  permission    Permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+}
+
+model UserRole {
+  user_id String
+  role_id String
+  user    User   @relation(fields: [user_id], references: [id])
+  role    Role   @relation(fields: [role_id], references: [id])
+
+  @@id([user_id, role_id])
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  parent_id String?
+  parent    Category?  @relation("Subcategories", fields: [parent_id], references: [id])
+  children  Category[] @relation("Subcategories")
+  name      String
+  slug      String
+  is_active Boolean    @default(true)
+  products  Product[]
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  name      String
+  is_active Boolean   @default(true)
+  products  Product[]
+}
+
+model Unit {
+  id                String    @id @default(uuid())
+  code              String
+  name              String
+  decimal_precision Int
+  products          Product[]
+}
+
+model Product {
+  id                  String             @id @default(uuid())
+  category_id         String
+  brand_id            String?
+  unit_id             String
+  sku                 String             @unique
+  barcode             String?            @unique
+  name_en             String
+  name_ur             String?
+  description         String?
+  storage_type        String
+  track_expiry        Boolean
+  is_active           Boolean            @default(true)
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  category            Category           @relation(fields: [category_id], references: [id])
+  brand               Brand?             @relation(fields: [brand_id], references: [id])
+  unit                Unit               @relation(fields: [unit_id], references: [id])
+  prices              ProductPrice[]
+  barcodes            ProductBarcode[]
+  purchase_items      PurchaseOrderItem[]
+  goods_receipt_items GoodsReceiptItem[]
+  inventory_bals      InventoryBalance[]
+  inventory_moves     InventoryMovement[]
+  inventory_count_its InventoryCountItem[]
+  stock_transfer_its  StockTransferItem[]
+  sale_items          SaleItem[]
+  refund_items        RefundItem[]
+}
+
+model ProductPrice {
+  id             String    @id @default(uuid())
+  product_id     String
+  branch_id      String?
+  effective_from DateTime
+  retail_price   Float
+  purchase_cost  Float
+  margin_amount  Float
+  price_version  Int
+  is_active      Boolean   @default(true)
+  product        Product   @relation(fields: [product_id], references: [id])
+}
+
+model ProductBarcode {
+  id            String  @id @default(uuid())
+  product_id    String
+  barcode_value String  @unique
+  barcode_type  String
+  is_primary    Boolean
+  product       Product @relation(fields: [product_id], references: [id])
+}
+
+model Supplier {
+  id              String          @id @default(uuid())
+  name            String
+  phone           String
+  email           String?
+  address         String?
+  tax_number      String?
+  is_active       Boolean         @default(true)
+  purchase_orders PurchaseOrder[]
+  goods_receipts  GoodsReceipt[]
+}
+
+model PurchaseOrder {
+  id             String              @id @default(uuid())
+  branch_id      String
+  supplier_id    String
+  po_number      String              @unique
+  status         String
+  expected_date  DateTime
+  total_amount   Float
+  created_by     String
+  created_at     DateTime            @default(now())
+  branch         Branch              @relation(fields: [branch_id], references: [id])
+  supplier       Supplier            @relation(fields: [supplier_id], references: [id])
+  items          PurchaseOrderItem[]
+  goods_receipts GoodsReceipt[]
+}
+
+model PurchaseOrderItem {
+  id                String        @id @default(uuid())
+  purchase_order_id String
+  product_id        String
+  ordered_qty       Float
+  received_qty      Float
+  unit_cost         Float
+  line_total        Float
+  purchase_order    PurchaseOrder @relation(fields: [purchase_order_id], references: [id])
+  product           Product       @relation(fields: [product_id], references: [id])
+}
+
+model GoodsReceipt {
+  id          String             @id @default(uuid())
+  branch_id   String
+  supplier_id String
+  po_id       String?
+  grn_number  String             @unique
+  received_by String
+  received_at DateTime
+  total_cost  Float
+  branch      Branch             @relation(fields: [branch_id], references: [id])
+  supplier    Supplier           @relation(fields: [supplier_id], references: [id])
+  po          PurchaseOrder?     @relation(fields: [po_id], references: [id])
+  items       GoodsReceiptItem[]
+}
+
+model GoodsReceiptItem {
+  id               String       @id @default(uuid())
+  goods_receipt_id String
+  product_id       String
+  batch_number     String?
+  expiry_date      DateTime?
+  qty_received     Float
+  unit_cost        Float
+  line_total       Float
+  goods_receipt    GoodsReceipt @relation(fields: [goods_receipt_id], references: [id])
+  product          Product      @relation(fields: [product_id], references: [id])
+}
+
+model InventoryBalance {
+  id           String   @id @default(uuid())
+  branch_id    String
+  product_id   String
+  on_hand_qty  Float
+  reserved_qty Float
+  available_qty Float
+  reorder_level Float
+  reorder_qty  Float
+  updated_at   DateTime @updatedAt
+  branch       Branch   @relation(fields: [branch_id], references: [id])
+  product      Product  @relation(fields: [product_id], references: [id])
+
+  @@unique([branch_id, product_id])
+}
+
+model InventoryMovement {
+  id             String   @id @default(uuid())
+  branch_id      String
+  product_id     String
+  movement_type  String
+  reference_type String
+  reference_id   String
+  qty_in         Float
+  qty_out        Float
+  unit_cost      Float
+  notes          String?
+  created_by     String
+  created_at     DateTime @default(now())
+  branch         Branch   @relation(fields: [branch_id], references: [id])
+  product        Product  @relation(fields: [product_id], references: [id])
+}
+
+model InventoryCount {
+  id           String               @id @default(uuid())
+  branch_id    String
+  count_number String               @unique
+  status       String
+  counted_by   String
+  counted_at   DateTime
+  branch       Branch               @relation(fields: [branch_id], references: [id])
+  items        InventoryCountItem[]
+}
+
+model InventoryCountItem {
+  id                 String         @id @default(uuid())
+  inventory_count_id String
+  product_id         String
+  system_qty         Float
+  counted_qty        Float
+  variance_qty       Float
+  inventory_count    InventoryCount @relation(fields: [inventory_count_id], references: [id])
+  product            Product        @relation(fields: [product_id], references: [id])
+}
+
+model StockTransfer {
+  id              String              @id @default(uuid())
+  from_branch_id  String
+  to_branch_id    String
+  transfer_number String              @unique
+  status          String
+  created_by      String
+  created_at      DateTime            @default(now())
+  from_branch     Branch              @relation("TransferFrom", fields: [from_branch_id], references: [id])
+  to_branch       Branch              @relation("TransferTo", fields: [to_branch_id], references: [id])
+  items           StockTransferItem[]
+}
+
+model StockTransferItem {
+  id                String        @id @default(uuid())
+  stock_transfer_id String
+  product_id        String
+  qty               Float
+  unit_cost         Float
+  stock_transfer    StockTransfer @relation(fields: [stock_transfer_id], references: [id])
+  product           Product       @relation(fields: [product_id], references: [id])
+}
+
+model Sale {
+  id                   String     @id @default(uuid())
+  branch_id            String
+  invoice_number       String     @unique
+  cashier_id           String
+  customer_id          String?
+  sale_status          String
+  subtotal             Float
+  discount_total       Float
+  tax_total            Float
+  grand_total          Float
+  amount_paid          Float
+  change_returned      Float
+  sale_channel         String
+  client_transaction_id String?    @unique
+  created_at           DateTime   @default(now())
+  branch               Branch     @relation(fields: [branch_id], references: [id])
+  cashier              User       @relation(fields: [cashier_id], references: [id])
+  customer             Customer?  @relation(fields: [customer_id], references: [id])
+  items                SaleItem[]
+  payments             Payment[]
+  refunds              Refund[]
+}
+
+model SaleItem {
+  id                    String  @id @default(uuid())
+  sale_id               String
+  product_id            String
+  product_name_snapshot String
+  barcode_snapshot      String?
+  qty                   Float
+  unit_price            Float
+  discount_amount       Float
+  tax_amount            Float
+  line_total            Float
+  sale                  Sale    @relation(fields: [sale_id], references: [id])
+  product               Product @relation(fields: [product_id], references: [id])
+}
+
+model Payment {
+  id               String    @id @default(uuid())
+  sale_id          String
+  payment_method   String
+  amount           Float
+  reference_number String?
+  payment_status   String
+  paid_at          DateTime
+  sale             Sale      @relation(fields: [sale_id], references: [id])
+}
+
+model Refund {
+  id               String       @id @default(uuid())
+  original_sale_id String
+  branch_id        String
+  refund_number    String       @unique
+  processed_by     String
+  refund_reason    String
+  refund_total     Float
+  created_at       DateTime     @default(now())
+  sale             Sale         @relation(fields: [original_sale_id], references: [id])
+  branch           Branch       @relation(fields: [branch_id], references: [id])
+  items            RefundItem[]
+}
+
+model RefundItem {
+  id                String  @id @default(uuid())
+  refund_id         String
+  product_id        String
+  qty               Float
+  unit_refund_price Float
+  line_refund_total Float
+  refund            Refund  @relation(fields: [refund_id], references: [id])
+  product           Product @relation(fields: [product_id], references: [id])
+}
+
+model Customer {
+  id             String   @id @default(uuid())
+  full_name      String
+  phone          String?  @unique
+  email          String?
+  points_balance Float    @default(0)
+  created_at     DateTime @default(now())
+  sales          Sale[]
+}
+
+model Register {
+  id             String         @id @default(uuid())
+  branch_id      String
+  code           String
+  name           String
+  is_active      Boolean        @default(true)
+  branch         Branch         @relation(fields: [branch_id], references: [id])
+  cashier_shifts CashierShift[]
+}
+
+model CashierShift {
+  id                    String    @id @default(uuid())
+  branch_id             String
+  register_id           String
+  user_id               String
+  opened_at             DateTime
+  closed_at             DateTime?
+  opening_cash          Float
+  closing_cash_expected Float?
+  closing_cash_actual   Float?
+  variance_amount       Float?
+  status                String
+  branch                Branch    @relation(fields: [branch_id], references: [id])
+  register              Register  @relation(fields: [register_id], references: [id])
+  user                  User      @relation(fields: [user_id], references: [id])
+}
+
+model DailyClosing {
+  id             String   @id @default(uuid())
+  branch_id      String
+  business_date  DateTime
+  total_sales    Float
+  total_cash     Float
+  total_card     Float
+  total_refunds  Float
+  total_discount Float
+  total_variance Float
+  closed_by      String
+  created_at     DateTime @default(now())
+  branch         Branch   @relation(fields: [branch_id], references: [id])
+}
+
+model SyncDevice {
+  id           String      @id @default(uuid())
+  branch_id    String
+  device_name  String
+  device_uuid  String      @unique
+  last_sync_at DateTime
+  is_active    Boolean     @default(true)
+  branch       Branch      @relation(fields: [branch_id], references: [id])
+  sync_queue   SyncQueue[]
+}
+
+model SyncQueue {
+  id          String     @id @default(uuid())
+  device_id   String
+  entity_type String
+  entity_id   String
+  action_type String
+  payload     String     // JSON representation
+  sync_status String
+  created_at  DateTime   @default(now())
+  sent_at     DateTime?
+  acked_at    DateTime?
+  device      SyncDevice @relation(fields: [device_id], references: [id])
+}

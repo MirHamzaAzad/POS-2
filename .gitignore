@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and distribution outputs
+dist/
+*/dist/
+dist-ssr/
+build/
+out/
+*.tsbuildinfo
+
+# Database and runtime files
+data/
+*/data/
+*.log
+*.pid
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
